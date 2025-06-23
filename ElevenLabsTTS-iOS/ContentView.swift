@@ -51,7 +51,7 @@ struct ContentView: View {
                             }
                             Spacer()
                             Button("Change") {
-                                selectedVoice = nil
+                                self.selectedVoice = nil
                             }
                             .buttonStyle(.bordered)
                         }
