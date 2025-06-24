@@ -85,7 +85,14 @@ class ElevenLabsAPI: ObservableObject {
         }
     }
     
-    func textToSpeech(text: String, voiceId: String, voiceSettings: VoiceSettings?) async -> Data? {
+    func textToSpeech(
+        text: String,
+        voiceId: String,
+        voiceSettings: VoiceSettings?,
+        modelId: String? = nil,
+        outputFormat: String? = nil,
+        speed: Double? = nil
+    ) async -> Data? {
         guard !apiKey.isEmpty else {
             await MainActor.run {
                 self.errorMessage = "API key is required"
@@ -99,14 +106,25 @@ class ElevenLabsAPI: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(apiKey, forHTTPHeaderField: "xi-api-key")
         
-        let ttsRequest = TTSRequest(
-            text: text,
-            model_id: "eleven_monolingual_v1",
-            voice_settings: voiceSettings
-        )
+        var ttsRequestDict: [String: Any] = [
+            "text": text,
+            "voice_settings": voiceSettings != nil ? voiceSettings!.asDictionary : [:]
+        ]
+        if let modelId = modelId {
+            ttsRequestDict["model_id"] = modelId
+        } else {
+            ttsRequestDict["model_id"] = "eleven_monolingual_v1"
+        }
+        if let speed = speed {
+            ttsRequestDict["speed"] = speed
+        }
+        // Output format is typically a query param, but if API supports in body, add here
+        if let outputFormat = outputFormat {
+            ttsRequestDict["output_format"] = outputFormat
+        }
         
         do {
-            let jsonData = try JSONEncoder().encode(ttsRequest)
+            let jsonData = try JSONSerialization.data(withJSONObject: ttsRequestDict, options: [])
             request.httpBody = jsonData
             
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -133,5 +151,24 @@ class ElevenLabsAPI: ObservableObject {
         }
         
         return nil
+    }
+    
+    /// Loads voices if not already loaded, and returns the voices array
+    public func loadVoicesIfNeeded() async -> [Voice] {
+        if voices.isEmpty {
+            await loadVoices()
+        }
+        return voices
+    }
+}
+
+extension VoiceSettings {
+    var asDictionary: [String: Any] {
+        var dict: [String: Any] = [:]
+        if let stability = stability { dict["stability"] = stability }
+        if let similarity_boost = similarity_boost { dict["similarity_boost"] = similarity_boost }
+        if let style = style { dict["style"] = style }
+        if let use_speaker_boost = use_speaker_boost { dict["use_speaker_boost"] = use_speaker_boost }
+        return dict
     }
 } 

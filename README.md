@@ -1,15 +1,18 @@
 # ElevenLabs TTS iOS App
 
+**Version 1.0.3 Build 1**
+
 A SwiftUI-based iOS application that converts text to speech using ElevenLabs AI voices. This app provides a modern, intuitive interface for generating high-quality AI speech from text input.
 
 ## Features
 
 - **Text-to-Speech Conversion**: Convert any text to natural-sounding speech
-- **Voice Selection**: Choose from a wide variety of AI voices
-- **Audio Playback**: Built-in audio player with play, pause, and stop controls
-- **Voice Settings**: Adjust stability and similarity boost parameters
-- **Modern UI**: Clean, intuitive SwiftUI interface
+- **Voice Selection**: Choose from a wide variety of AI voices in settings
+- **Audio Playback**: Built-in audio player with play, stop, save, and share controls
+- **Voice Settings**: Adjust stability, similarity boost, style, and speaker boost parameters
+- **Modern UI**: Clean, intuitive SwiftUI interface with simplified controls
 - **Background Audio**: Continue playing audio when app is in background
+- **Configuration Persistence**: Settings are saved and restored between app launches
 
 ## Requirements
 
@@ -36,8 +39,10 @@ open ElevenLabsTTS-iOS.xcodeproj
 
 1. Get your API key from [ElevenLabs Console](https://elevenlabs.io/account)
 2. Run the app on your device or simulator
-3. Tap "Settings" in the top-right corner
-4. Enter your API key and tap "Save"
+3. Tap the gear icon (⚙️) in the top-right corner to open Settings
+4. Enter your API key and tap "Load Voices" to verify
+5. Select your preferred voice from the dropdown
+6. Tap "Save" to store your configuration
 
 ### 4. Build and Run
 
@@ -48,24 +53,31 @@ open ElevenLabsTTS-iOS.xcodeproj
 
 ### Basic Text-to-Speech
 
-1. **Select a Voice**: Tap "Select Voice" and choose from the available voices
-2. **Enter Text**: Type or paste the text you want to convert to speech
-3. **Generate**: Tap "Generate Speech" to create the audio
-4. **Play**: Use the audio controls to play, pause, or stop the generated speech
+1. **Configure Voice**: First, set up your preferred voice in Settings
+2. **Enter Text**: Type or paste the text you want to convert to speech in the text area
+3. **Generate**: Tap "Speak" to generate and play the audio
+4. **Control**: Use the audio controls to stop, save, or share the generated speech
 
 ### Voice Settings
 
-The app uses default voice settings optimized for quality:
-- **Stability**: 0.5 (balanced consistency)
-- **Similarity Boost**: 0.75 (high similarity to original voice)
-- **Style**: 0.0 (neutral style)
-- **Speaker Boost**: Enabled
+Access voice settings through the gear icon (⚙️) in the top-right corner:
+
+- **Voice Selection**: Choose from available ElevenLabs voices
+- **Model Selection**: Select the AI model (eleven_multilingual_v2, etc.)
+- **Output Format**: Choose audio format (MP3, WAV, OGG, PCM)
+- **Volume Control**: Adjust playback volume
+- **Voice Parameters**:
+  - **Stability**: 0-100 (consistency of voice)
+  - **Similarity**: 0-100 (similarity to original voice)
+  - **Style**: 0-100 (style variation)
+  - **Speaker Boost**: Enable/disable speaker enhancement
+  - **Speed**: 0-100 (playback speed)
 
 ### Audio Controls
 
-- **Play/Pause**: Toggle audio playback
-- **Stop**: Stop playback and reset to beginning
-- **Seek**: Drag the progress bar to jump to any position
+- **Speak**: Generate and play speech from entered text
+- **Stop**: Stop current playback
+- **Save**: Save the generated audio (coming soon)
 - **Share**: Share the generated audio (coming soon)
 
 ## Project Structure
@@ -73,9 +85,9 @@ The app uses default voice settings optimized for quality:
 ```
 ElevenLabsTTS-iOS/
 ├── ElevenLabsTTS_iOSApp.swift      # Main app entry point
-├── ContentView.swift               # Main UI view
+├── ContentView.swift               # Main UI view with simplified controls
 ├── ConfigurationView.swift         # Settings and API configuration
-├── Models.swift                    # Data models and structures
+├── Models.swift                    # Data models and API response structures
 ├── ElevenLabsAPI.swift            # API client for ElevenLabs
 ├── AudioManager.swift             # Audio playback management
 ├── Assets.xcassets/               # App icons and colors
@@ -90,21 +102,29 @@ Handles all communication with the ElevenLabs API:
 - Voice listing and selection
 - Text-to-speech conversion
 - Error handling and status updates
+- Configuration persistence
 
 ### AudioManager
 Manages audio playback using AVFoundation:
 - Audio session configuration
-- Playback controls (play, pause, stop, seek)
+- Playback controls (play, stop)
 - Background audio support
 - Progress tracking
 
 ### ContentView
-Main user interface with:
-- Voice selection interface
-- Text input area
-- Generation controls
-- Audio player with progress bar
+Main user interface with simplified design:
+- Large text input area
+- 2x2 button grid (Speak, Stop, Save, Share)
 - Status messages
+- Settings access via gear icon
+
+### ConfigurationView
+Settings interface with:
+- API key configuration
+- Voice selection dropdown
+- Voice parameter controls
+- Model and format selection
+- Preview functionality
 
 ## API Integration
 
@@ -122,6 +142,7 @@ Comprehensive error handling for:
 - API authentication errors
 - Invalid voice selections
 - Audio playback problems
+- JSON decoding errors
 
 ## Permissions
 
@@ -142,11 +163,17 @@ The app requires the following permissions:
    - Check internet connection
    - Verify API key is correct
    - Check ElevenLabs service status
+   - Ensure API key has proper permissions
 
 3. **Build Errors**
    - Ensure Xcode 15.0+ is installed
    - Check iOS deployment target (17.0+)
    - Verify all files are included in the project
+
+4. **Decoding Errors**
+   - The app now handles null values in API responses
+   - Voice verification fields are properly optional
+   - All model fields are nullable to prevent crashes
 
 ### Debug Information
 
@@ -155,15 +182,25 @@ The app includes detailed logging for troubleshooting:
 - Audio session configuration status
 - Playback state changes
 - Error messages and stack traces
+- JSON decoding errors with context
+
+## Recent Updates (v1.0.3 Build 1)
+
+- **Fixed API Decoding Issues**: Resolved JSON decoding errors with null values
+- **Improved Voice Selection**: App now uses selected voice instead of first available
+- **Enhanced Error Handling**: Better error messages and recovery
+- **Configuration Persistence**: Settings are properly saved and restored
+- **Simplified UI**: Streamlined interface focusing on core functionality
 
 ## Development
 
 ### Adding New Features
 
-1. **Voice Settings UI**: Add sliders for stability and similarity boost
-2. **Audio Export**: Save generated audio to files
-3. **Voice Cloning**: Add support for custom voice creation
-4. **Batch Processing**: Convert multiple text inputs at once
+1. **Audio Export**: Save generated audio to files
+2. **Voice Cloning**: Add support for custom voice creation
+3. **Batch Processing**: Convert multiple text inputs at once
+4. **Voice Preview**: Preview voices before selection
+5. **History**: Save and replay previous generations
 
 ### Code Style
 
@@ -171,6 +208,7 @@ The app includes detailed logging for troubleshooting:
 - Use `@StateObject` for view models
 - Implement proper error handling
 - Add comprehensive logging for debugging
+- Use `@AppStorage` for configuration persistence
 
 ## License
 

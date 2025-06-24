@@ -5,202 +5,125 @@ struct ContentView: View {
     @StateObject private var api = ElevenLabsAPI()
     @StateObject private var audioManager = AudioManager()
     @State private var inputText = ""
-    @State private var selectedVoice: Voice?
     @State private var showingConfiguration = false
     @State private var statusMessage = "Ready"
     @State private var isGenerating = false
+    
+    // Access stored configuration
+    @AppStorage("selectedVoiceId") private var selectedVoiceId = ""
+    @AppStorage("apiKey") private var apiKey = ""
     
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
                 // Header
-                VStack {
+                VStack(alignment: .leading, spacing: 0) {
                     Text("ElevenLabs TTS")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                    
-                    Text("Text-to-Speech with AI Voices")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 36, weight: .bold))
+                        .padding(.top, 8)
+                    Text("Text to Speech")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .padding(.bottom, 8)
                 }
-                .padding(.top)
-                
-                // Voice Selection
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Select Voice")
-                        .font(.headline)
-                    
-                    if api.isLoading {
-                        HStack {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                            Text("Loading voices...")
-                                .foregroundColor(.secondary)
-                        }
-                    } else if let selectedVoice = selectedVoice {
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(selectedVoice.name)
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                if let category = selectedVoice.category {
-                                    Text(category)
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            Spacer()
-                            Button("Change") {
-                                self.selectedVoice = nil
-                            }
-                            .buttonStyle(.bordered)
-                        }
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(10)
-                    } else {
-                        ScrollView {
-                            LazyVStack(spacing: 8) {
-                                ForEach(api.voices) { voice in
-                                    Button(action: {
-                                        selectedVoice = voice
-                                    }) {
-                                        HStack {
-                                            VStack(alignment: .leading) {
-                                                Text(voice.name)
-                                                    .font(.subheadline)
-                                                    .fontWeight(.medium)
-                                                    .foregroundColor(.primary)
-                                                if let category = voice.category {
-                                                    Text(category)
-                                                        .font(.caption)
-                                                        .foregroundColor(.secondary)
-                                                }
-                                            }
-                                            Spacer()
-                                            Image(systemName: "chevron.right")
-                                                .foregroundColor(.secondary)
-                                        }
-                                        .padding()
-                                        .background(Color(.systemGray6))
-                                        .cornerRadius(8)
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                }
-                            }
-                        }
-                        .frame(maxHeight: 200)
-                    }
-                }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 
                 // Text Input
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Text to Convert")
-                        .font(.headline)
-                    
+                ZStack(alignment: .topLeading) {
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color(.systemGray4), lineWidth: 4)
+                        .background(Color.white)
                     TextEditor(text: $inputText)
-                        .frame(minHeight: 100)
                         .padding(8)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(10)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color(.systemGray4), lineWidth: 1)
-                        )
+                        .font(.title2)
+                        .frame(minHeight: 250, maxHeight: 250)
+                        .background(Color.clear)
                 }
+                .frame(maxWidth: .infinity, maxHeight: 250)
+                .padding(.horizontal, 4)
                 
-                // Generate Button
-                Button(action: generateSpeech) {
-                    HStack {
-                        if isGenerating {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                                .tint(.white)
-                        } else {
-                            Image(systemName: "play.circle.fill")
-                        }
-                        Text(isGenerating ? "Generating..." : "Generate Speech")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(selectedVoice != nil && !inputText.isEmpty ? Color.blue : Color.gray)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-                }
-                .disabled(selectedVoice == nil || inputText.isEmpty || isGenerating)
-                
-                // Audio Controls
-                if audioManager.duration > 0 {
-                    VStack(spacing: 12) {
-                        // Progress Bar
-                        VStack(spacing: 4) {
-                            Slider(
-                                value: Binding(
-                                    get: { audioManager.currentTime },
-                                    set: { audioManager.seek(to: $0) }
-                                ),
-                                in: 0...audioManager.duration
-                            )
-                            
+                // 2x2 Button Grid
+                VStack(spacing: 16) {
+                    HStack(spacing: 16) {
+                        Button(action: generateSpeech) {
                             HStack {
-                                Text(formatTime(audioManager.currentTime))
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                                Text(formatTime(audioManager.duration))
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                Image(systemName: "play.circle.fill")
+                                Text("Speak")
                             }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                            .font(.title3.bold())
                         }
+                        .disabled(inputText.isEmpty || isGenerating)
                         
-                        // Playback Controls
-                        HStack(spacing: 20) {
-                            Button(action: {
-                                if audioManager.isPlaying {
-                                    audioManager.pauseAudio()
-                                } else {
-                                    audioManager.resumeAudio()
-                                }
-                            }) {
-                                Image(systemName: audioManager.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                                    .font(.title)
-                                    .foregroundColor(.blue)
-                            }
-                            
-                            Button(action: {
-                                audioManager.stopAudio()
-                            }) {
+                        Button(action: {
+                            audioManager.stopAudio()
+                        }) {
+                            HStack {
                                 Image(systemName: "stop.circle.fill")
-                                    .font(.title)
-                                    .foregroundColor(.red)
+                                Text("Stop")
                             }
-                            
-                            Button(action: shareAudio) {
-                                Image(systemName: "square.and.arrow.up")
-                                    .font(.title)
-                                    .foregroundColor(.green)
-                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.red)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                            .font(.title3.bold())
                         }
+                        .disabled(audioManager.duration == 0)
                     }
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(10)
+                    HStack(spacing: 16) {
+                        Button(action: saveAudio) {
+                            HStack {
+                                Image(systemName: "arrow.down.to.line.alt")
+                                Text("Save")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.green)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                            .font(.title3.bold())
+                        }
+                        .disabled(audioManager.duration == 0)
+                        
+                        Button(action: shareAudio) {
+                            HStack {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Share")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.orange)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                            .font(.title3.bold())
+                        }
+                        .disabled(audioManager.duration == 0)
+                    }
                 }
+                .padding(.top, 8)
+                .padding(.horizontal, 4)
+                
+                Spacer()
                 
                 // Status Message
                 Text(statusMessage)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
-                
-                Spacer()
+                    .padding(.bottom, 8)
             }
             .padding()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Settings") {
-                        showingConfiguration = true
+                    Button(action: { showingConfiguration = true }) {
+                        Image(systemName: "gearshape")
+                            .imageScale(.large)
                     }
                 }
             }
@@ -208,63 +131,65 @@ struct ContentView: View {
                 ConfigurationView(api: api)
             }
             .onAppear {
-                if api.voices.isEmpty {
-                    Task {
-                        await api.loadVoices()
-                    }
-                }
-            }
-            .onChange(of: audioManager.isPlaying) { _, isPlaying in
-                if !isPlaying && statusMessage == "Playing audio..." {
-                    statusMessage = "Ready"
+                // Set the API key from stored configuration
+                if !apiKey.isEmpty {
+                    api.setAPIKey(apiKey)
                 }
             }
         }
     }
     
     private func generateSpeech() {
-        guard let voice = selectedVoice, !inputText.isEmpty else { return }
-        
+        guard !inputText.isEmpty else { return }
         isGenerating = true
         statusMessage = "Generating speech..."
-        
         let voiceSettings = VoiceSettings(
             stability: 0.5,
             similarity_boost: 0.75,
             style: 0.0,
             use_speaker_boost: true
         )
-        
         Task {
-            if let audioData = await api.textToSpeech(
-                text: inputText,
-                voiceId: voice.id,
-                voiceSettings: voiceSettings
-            ) {
-                await MainActor.run {
-                    audioManager.playAudio(data: audioData)
-                    statusMessage = "Playing audio..."
-                    isGenerating = false
+            let voices = await api.loadVoicesIfNeeded()
+            
+            // Use the selected voice ID if available, otherwise use the first voice
+            let targetVoiceId = selectedVoiceId.isEmpty ? voices.first?.voiceId : selectedVoiceId
+            let voice = voices.first { $0.voiceId == targetVoiceId }
+            
+            if let voice = voice {
+                if let audioData = await api.textToSpeech(
+                    text: inputText,
+                    voiceId: voice.voiceId ?? "",
+                    voiceSettings: voiceSettings
+                ) {
+                    await MainActor.run {
+                        audioManager.playAudio(data: audioData)
+                        statusMessage = "Playing audio..."
+                        isGenerating = false
+                    }
+                } else {
+                    await MainActor.run {
+                        statusMessage = api.errorMessage ?? "Failed to generate speech"
+                        isGenerating = false
+                    }
                 }
             } else {
                 await MainActor.run {
-                    statusMessage = api.errorMessage ?? "Failed to generate speech"
+                    statusMessage = "No voices available or selected voice not found"
                     isGenerating = false
                 }
             }
         }
     }
     
-    private func shareAudio() {
-        // This would need to be implemented to save and share the audio file
-        // For now, just show a placeholder
-        statusMessage = "Share functionality coming soon"
+    private func saveAudio() {
+        // Placeholder for save functionality
+        statusMessage = "Save functionality coming soon"
     }
     
-    private func formatTime(_ time: TimeInterval) -> String {
-        let minutes = Int(time) / 60
-        let seconds = Int(time) % 60
-        return String(format: "%d:%02d", minutes, seconds)
+    private func shareAudio() {
+        // Placeholder for share functionality
+        statusMessage = "Share functionality coming soon"
     }
 }
 

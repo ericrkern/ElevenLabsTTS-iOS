@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		8A1B2C3D4E5F6A7B8C9D0E1F /* ElevenLabsTTS_iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1B2C3D4E5F6A7B8C9D0E20 /* ElevenLabsTTS_iOSApp.swift */; };
+		8A1B2C3D4E5F6A7B8C9D0E3F /* ElevenLabsTTS_iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1B2C3D4E5F6A7B8C9D0E20 /* ElevenLabsTTS_iOSApp.swift */; };
 		8A1B2C3D4E5F6A7B8C9D0E21 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1B2C3D4E5F6A7B8C9D0E22 /* ContentView.swift */; };
 		8A1B2C3D4E5F6A7B8C9D0E23 /* ConfigurationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1B2C3D4E5F6A7B8C9D0E24 /* ConfigurationView.swift */; };
 		8A1B2C3D4E5F6A7B8C9D0E25 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1B2C3D4E5F6A7B8C9D0E26 /* Models.swift */; };
@@ -156,7 +156,7 @@
 				8A1B2C3D4E5F6A7B8C9D0E25 /* Models.swift in Sources */,
 				8A1B2C3D4E5F6A7B8C9D0E27 /* ElevenLabsAPI.swift in Sources */,
 				8A1B2C3D4E5F6A7B8C9D0E29 /* AudioManager.swift in Sources */,
-				8A1B2C3D4E5F6A7B8C9D0E1F /* ElevenLabsTTS_iOSApp.swift in Sources */,
+				8A1B2C3D4E5F6A7B8C9D0E3F /* ElevenLabsTTS_iOSApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -303,7 +303,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.ElevenLabsTTSiOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -333,7 +333,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.ElevenLabsTTSiOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

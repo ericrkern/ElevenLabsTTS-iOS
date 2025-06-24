@@ -2,8 +2,8 @@ import Foundation
 
 // MARK: - Voice Models
 struct Voice: Codable, Identifiable {
-    let id: String
-    let name: String
+    let voiceId: String?
+    let name: String?
     let category: String?
     let description: String?
     let labels: [String: String]?
@@ -15,18 +15,23 @@ struct Voice: Codable, Identifiable {
     let voice_verification: VoiceVerification?
     
     enum CodingKeys: String, CodingKey {
-        case id = "voice_id"
+        case voiceId = "voice_id"
         case name, category, description, labels, samples, settings, sharing
         case high_quality_base_model_ids, safety_control, voice_verification
+    }
+    
+    // Required by Identifiable protocol
+    var id: String {
+        return voiceId ?? UUID().uuidString
     }
 }
 
 struct Sample: Codable {
-    let sample_id: String
-    let file_name: String
-    let mime_type: String
-    let size_bytes: Int
-    let hash: String
+    let sample_id: String?
+    let file_name: String?
+    let mime_type: String?
+    let size_bytes: Int?
+    let hash: String?
 }
 
 struct VoiceSettings: Codable {
@@ -57,36 +62,36 @@ struct Sharing: Codable {
 }
 
 struct LinkedUser: Codable {
-    let user_id: String
-    let name: String
-    let email: String
+    let user_id: String?
+    let name: String?
+    let email: String?
     let profile_photo_url: String?
 }
 
 struct VoiceVerification: Codable {
-    let requires_verification: Bool
-    let is_verified: Bool
-    let verification_failures: [String]
-    let verification_attempts_count: Int
-    let language: String
-    let verification_attempts: [VerificationAttempt]
+    let requires_verification: Bool?
+    let is_verified: Bool?
+    let verification_failures: [String]?
+    let verification_attempts_count: Int?
+    let language: String?
+    let verification_attempts: [VerificationAttempt]?
 }
 
 struct VerificationAttempt: Codable {
-    let text: String
-    let date_unix: Int
-    let accepted: Bool
-    let similarity: Double
-    let levenshtein_distance: Int
-    let recording: Recording
+    let text: String?
+    let date_unix: Int?
+    let accepted: Bool?
+    let similarity: Double?
+    let levenshtein_distance: Int?
+    let recording: Recording?
 }
 
 struct Recording: Codable {
-    let recording_id: String
-    let mime_type: String
-    let size_bytes: Int
-    let upload_date_unix: Int
-    let transcription: String
+    let recording_id: String?
+    let mime_type: String?
+    let size_bytes: Int?
+    let upload_date_unix: Int?
+    let transcription: String?
 }
 
 // MARK: - Text-to-Speech Models
