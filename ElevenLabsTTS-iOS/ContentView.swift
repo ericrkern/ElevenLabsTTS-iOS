@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 struct ContentView: View {
     @StateObject private var api = ElevenLabsAPI()
@@ -8,10 +9,13 @@ struct ContentView: View {
     @State private var showingConfiguration = false
     @State private var statusMessage = "Ready"
     @State private var isGenerating = false
+    @State private var currentAudioData: Data?
+    @State private var showingSaveDialog = false
     
     // Access stored configuration
     @AppStorage("selectedVoiceId") private var selectedVoiceId = ""
     @AppStorage("apiKey") private var apiKey = ""
+    @AppStorage("selectedOutputFormat") private var selectedOutputFormat = "MP3 - 44.1kHz 192kbps"
     
     var body: some View {
         NavigationView {
@@ -61,6 +65,7 @@ struct ContentView: View {
                         
                         Button(action: {
                             audioManager.stopAudio()
+                            currentAudioData = nil
                         }) {
                             HStack {
                                 Image(systemName: "stop.circle.fill")
@@ -88,7 +93,7 @@ struct ContentView: View {
                             .cornerRadius(12)
                             .font(.title3.bold())
                         }
-                        .disabled(audioManager.duration == 0)
+                        .disabled(currentAudioData == nil)
                         
                         Button(action: shareAudio) {
                             HStack {
@@ -102,7 +107,7 @@ struct ContentView: View {
                             .cornerRadius(12)
                             .font(.title3.bold())
                         }
-                        .disabled(audioManager.duration == 0)
+                        .disabled(currentAudioData == nil)
                     }
                 }
                 .padding(.top, 8)
@@ -160,9 +165,11 @@ struct ContentView: View {
                 if let audioData = await api.textToSpeech(
                     text: inputText,
                     voiceId: voice.voiceId ?? "",
-                    voiceSettings: voiceSettings
+                    voiceSettings: voiceSettings,
+                    outputFormat: selectedOutputFormat
                 ) {
                     await MainActor.run {
+                        currentAudioData = audioData
                         audioManager.playAudio(data: audioData)
                         statusMessage = "Playing audio..."
                         isGenerating = false
@@ -183,13 +190,88 @@ struct ContentView: View {
     }
     
     private func saveAudio() {
-        // Placeholder for save functionality
-        statusMessage = "Save functionality coming soon"
+        guard let audioData = currentAudioData else {
+            statusMessage = "No audio to save"
+            return
+        }
+        
+        // Generate filename with timestamp
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        let timestamp = dateFormatter.string(from: Date())
+        
+        // Get file extension based on selected format
+        let fileExtension = getFileExtension(for: selectedOutputFormat)
+        let filename = "ElevenLabs_TTS_\(timestamp).\(fileExtension)"
+        
+        // Create temporary file URL
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        
+        do {
+            try audioData.write(to: tempURL)
+            
+            // Show document picker for save location
+            let activityVC = UIActivityViewController(activityItems: [tempURL], applicationActivities: nil)
+            
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first {
+                window.rootViewController?.present(activityVC, animated: true) {
+                    statusMessage = "Audio saved successfully"
+                }
+            }
+        } catch {
+            statusMessage = "Failed to save audio: \(error.localizedDescription)"
+        }
+    }
+    
+    private func getFileExtension(for format: String) -> String {
+        switch format {
+        case "MP3 - 44.1kHz 192kbps":
+            return "mp3"
+        case "WAV - 44.1kHz":
+            return "wav"
+        case "OGG - 48kHz":
+            return "ogg"
+        case "PCM - 16bit 44.1kHz":
+            return "pcm"
+        default:
+            return "mp3"
+        }
     }
     
     private func shareAudio() {
-        // Placeholder for share functionality
-        statusMessage = "Share functionality coming soon"
+        guard let audioData = currentAudioData else {
+            statusMessage = "No audio to share"
+            return
+        }
+        
+        // Generate filename with timestamp
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        let timestamp = dateFormatter.string(from: Date())
+        
+        // Get file extension based on selected format
+        let fileExtension = getFileExtension(for: selectedOutputFormat)
+        let filename = "ElevenLabs_TTS_\(timestamp).\(fileExtension)"
+        
+        // Create temporary file URL
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        
+        do {
+            try audioData.write(to: tempURL)
+            
+            // Show share sheet
+            let activityVC = UIActivityViewController(activityItems: [tempURL], applicationActivities: nil)
+            
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first {
+                window.rootViewController?.present(activityVC, animated: true) {
+                    statusMessage = "Audio shared successfully"
+                }
+            }
+        } catch {
+            statusMessage = "Failed to share audio: \(error.localizedDescription)"
+        }
     }
 }
 
