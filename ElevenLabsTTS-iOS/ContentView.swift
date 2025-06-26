@@ -18,7 +18,7 @@ struct ContentView: View {
     @AppStorage("selectedOutputFormat") private var selectedOutputFormat = "MP3 - 44.1kHz 192kbps"
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 20) {
                 // Header
                 VStack(alignment: .leading, spacing: 0) {
@@ -123,6 +123,7 @@ struct ContentView: View {
                     .padding(.bottom, 8)
             }
             .padding()
+            .navigationTitle("ElevenLabs TTS")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
