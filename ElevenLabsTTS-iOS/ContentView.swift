@@ -11,6 +11,8 @@ struct ContentView: View {
     @State private var isGenerating = false
     @State private var currentAudioData: Data?
     @State private var showingSaveDialog = false
+    @State private var audioFileURL: URL?
+    @State private var showingShareSheet = false
     
     // Access stored configuration
     @AppStorage("selectedVoiceId") private var selectedVoiceId = ""
@@ -81,7 +83,7 @@ struct ContentView: View {
                         .disabled(audioManager.duration == 0)
                     }
                     HStack(spacing: 16) {
-                        Button(action: saveAudio) {
+                        Button(action: prepareAudioForSharing) {
                             HStack {
                                 Image(systemName: "arrow.down.to.line.alt")
                                 Text("Save")
@@ -95,7 +97,7 @@ struct ContentView: View {
                         }
                         .disabled(currentAudioData == nil)
                         
-                        Button(action: shareAudio) {
+                        Button(action: prepareAudioForSharing) {
                             HStack {
                                 Image(systemName: "square.and.arrow.up")
                                 Text("Share")
@@ -135,6 +137,11 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showingConfiguration) {
                 ConfigurationView(api: api)
+            }
+            .sheet(isPresented: $showingShareSheet) {
+                if let audioFileURL = audioFileURL {
+                    ShareSheet(activityItems: [audioFileURL])
+                }
             }
             .onAppear {
                 // Set the API key from stored configuration
@@ -190,57 +197,7 @@ struct ContentView: View {
         }
     }
     
-    private func saveAudio() {
-        guard let audioData = currentAudioData else {
-            statusMessage = "No audio to save"
-            return
-        }
-        
-        // Generate filename with timestamp
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-        let timestamp = dateFormatter.string(from: Date())
-        
-        // Get file extension based on selected format
-        let fileExtension = getFileExtension(for: selectedOutputFormat)
-        let filename = "ElevenLabs_TTS_\(timestamp).\(fileExtension)"
-        
-        // Create temporary file URL
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
-        
-        do {
-            try audioData.write(to: tempURL)
-            
-            // Show document picker for save location
-            let activityVC = UIActivityViewController(activityItems: [tempURL], applicationActivities: nil)
-            
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first {
-                window.rootViewController?.present(activityVC, animated: true) {
-                    statusMessage = "Audio saved successfully"
-                }
-            }
-        } catch {
-            statusMessage = "Failed to save audio: \(error.localizedDescription)"
-        }
-    }
-    
-    private func getFileExtension(for format: String) -> String {
-        switch format {
-        case "MP3 - 44.1kHz 192kbps":
-            return "mp3"
-        case "WAV - 44.1kHz":
-            return "wav"
-        case "OGG - 48kHz":
-            return "ogg"
-        case "PCM - 16bit 44.1kHz":
-            return "pcm"
-        default:
-            return "mp3"
-        }
-    }
-    
-    private func shareAudio() {
+    private func prepareAudioForSharing() {
         guard let audioData = currentAudioData else {
             statusMessage = "No audio to share"
             return
@@ -260,20 +217,40 @@ struct ContentView: View {
         
         do {
             try audioData.write(to: tempURL)
-            
-            // Show share sheet
-            let activityVC = UIActivityViewController(activityItems: [tempURL], applicationActivities: nil)
-            
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first {
-                window.rootViewController?.present(activityVC, animated: true) {
-                    statusMessage = "Audio shared successfully"
-                }
-            }
+            audioFileURL = tempURL
+            showingShareSheet = true
+            statusMessage = "Ready to share audio"
         } catch {
-            statusMessage = "Failed to share audio: \(error.localizedDescription)"
+            statusMessage = "Failed to prepare audio: \(error.localizedDescription)"
         }
     }
+    
+    private func getFileExtension(for format: String) -> String {
+        switch format {
+        case "MP3 - 44.1kHz 192kbps":
+            return "mp3"
+        case "WAV - 44.1kHz":
+            return "wav"
+        case "OGG - 48kHz":
+            return "ogg"
+        case "PCM - 16bit 44.1kHz":
+            return "pcm"
+        default:
+            return "mp3"
+        }
+    }
+}
+
+// ShareSheet wrapper for UIActivityViewController
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 #Preview {

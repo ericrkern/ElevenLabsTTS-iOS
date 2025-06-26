@@ -1,6 +1,6 @@
 # ElevenLabs TTS iOS App
 
-**Version 1.0.3 Build 1**
+**Version 1.0.3 Build 2**
 
 A SwiftUI-based iOS application that converts text to speech using ElevenLabs AI voices. This app provides a modern, intuitive interface for generating high-quality AI speech from text input.
 
@@ -183,6 +183,13 @@ The app includes detailed logging for troubleshooting:
 - Playback state changes
 - Error messages and stack traces
 - JSON decoding errors with context
+
+## Recent Updates (v1.0.3 Build 2)
+
+- **Fixed iPad Layout Issues**: Replaced deprecated NavigationView with NavigationStack for proper iPad display
+- **Fixed iPad Share/Save Crashes**: Implemented SwiftUI-native sharing with proper UIActivityViewController wrapper
+- **Improved Device Compatibility**: Better support for both iPhone and iPad interfaces
+- **Enhanced User Experience**: Share and Save buttons now work reliably on all devices
 
 ## Recent Updates (v1.0.3 Build 1)
 
