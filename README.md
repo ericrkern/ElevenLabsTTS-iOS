@@ -1,6 +1,6 @@
 # ElevenLabs TTS iOS App
 
-**Version 1.0.3 Build 2**
+**Version 1.0.3 Build 3**
 
 A SwiftUI-based iOS application that converts text to speech using ElevenLabs AI voices. This app provides a modern, intuitive interface for generating high-quality AI speech from text input.
 
@@ -77,8 +77,8 @@ Access voice settings through the gear icon (⚙️) in the top-right corner:
 
 - **Speak**: Generate and play speech from entered text
 - **Stop**: Stop current playback
-- **Save**: Save the generated audio (coming soon)
-- **Share**: Share the generated audio (coming soon)
+- **Save**: Save the generated audio to device storage (works independently)
+- **Share**: Share the generated audio via iOS share sheet (works independently)
 
 ## Project Structure
 
@@ -183,6 +183,14 @@ The app includes detailed logging for troubleshooting:
 - Playback state changes
 - Error messages and stack traces
 - JSON decoding errors with context
+
+## Recent Updates (v1.0.3 Build 3)
+
+- **Enhanced Save and Share Functionality**: Save and Share buttons now work independently without requiring the Speak button to be pressed first
+- **Automatic Audio Generation**: When Save or Share is pressed, the app automatically generates audio if it doesn't exist
+- **Improved User Workflow**: Users can now save or share audio files directly without the extra step of pressing Speak
+- **Smart Audio Management**: The app intelligently reuses existing audio data or generates new audio as needed
+- **Better Button States**: Save and Share buttons are now properly enabled when there's text input, regardless of audio state
 
 ## Recent Updates (v1.0.3 Build 2)
 

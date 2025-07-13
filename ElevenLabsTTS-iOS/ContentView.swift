@@ -83,7 +83,7 @@ struct ContentView: View {
                         .disabled(audioManager.duration == 0)
                     }
                     HStack(spacing: 16) {
-                        Button(action: prepareAudioForSharing) {
+                        Button(action: saveAudio) {
                             HStack {
                                 Image(systemName: "arrow.down.to.line.alt")
                                 Text("Save")
@@ -95,9 +95,9 @@ struct ContentView: View {
                             .cornerRadius(12)
                             .font(.title3.bold())
                         }
-                        .disabled(currentAudioData == nil)
+                        .disabled(inputText.isEmpty || isGenerating)
                         
-                        Button(action: prepareAudioForSharing) {
+                        Button(action: shareAudio) {
                             HStack {
                                 Image(systemName: "square.and.arrow.up")
                                 Text("Share")
@@ -109,7 +109,7 @@ struct ContentView: View {
                             .cornerRadius(12)
                             .font(.title3.bold())
                         }
-                        .disabled(currentAudioData == nil)
+                        .disabled(inputText.isEmpty || isGenerating)
                     }
                 }
                 .padding(.top, 8)
@@ -141,6 +141,11 @@ struct ContentView: View {
             .sheet(isPresented: $showingShareSheet) {
                 if let audioFileURL = audioFileURL {
                     ShareSheet(activityItems: [audioFileURL])
+                }
+            }
+            .sheet(isPresented: $showingSaveDialog) {
+                if let audioFileURL = audioFileURL {
+                    SaveSheet(audioFileURL: audioFileURL)
                 }
             }
             .onAppear {
@@ -197,31 +202,126 @@ struct ContentView: View {
         }
     }
     
-    private func prepareAudioForSharing() {
-        guard let audioData = currentAudioData else {
-            statusMessage = "No audio to share"
+    private func saveAudio() {
+        Task {
+            await generateAudioIfNeeded { audioData in
+                if let audioData = audioData {
+                    // Generate filename with timestamp
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+                    let timestamp = dateFormatter.string(from: Date())
+                    
+                    // Get file extension based on selected format
+                    let fileExtension = getFileExtension(for: selectedOutputFormat)
+                    let filename = "ElevenLabs_TTS_\(timestamp).\(fileExtension)"
+                    
+                    // Create temporary file URL
+                    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+                    
+                    do {
+                        try audioData.write(to: tempURL)
+                        audioFileURL = tempURL
+                        showingSaveDialog = true
+                        statusMessage = "Audio saved successfully"
+                    } catch {
+                        statusMessage = "Failed to save audio: \(error.localizedDescription)"
+                    }
+                }
+            }
+        }
+    }
+    
+    private func shareAudio() {
+        Task {
+            await generateAudioIfNeeded { audioData in
+                if let audioData = audioData {
+                    // Generate filename with timestamp
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+                    let timestamp = dateFormatter.string(from: Date())
+                    
+                    // Get file extension based on selected format
+                    let fileExtension = getFileExtension(for: selectedOutputFormat)
+                    let filename = "ElevenLabs_TTS_\(timestamp).\(fileExtension)"
+                    
+                    // Create temporary file URL
+                    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+                    
+                    do {
+                        try audioData.write(to: tempURL)
+                        audioFileURL = tempURL
+                        showingShareSheet = true
+                        statusMessage = "Ready to share audio"
+                    } catch {
+                        statusMessage = "Failed to prepare audio: \(error.localizedDescription)"
+                    }
+                }
+            }
+        }
+    }
+    
+    private func generateAudioIfNeeded(completion: @escaping (Data?) -> Void) async {
+        // If we already have audio data, use it
+        if let existingAudioData = currentAudioData {
+            await MainActor.run {
+                completion(existingAudioData)
+            }
             return
         }
         
-        // Generate filename with timestamp
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-        let timestamp = dateFormatter.string(from: Date())
+        // Otherwise, generate new audio
+        guard !inputText.isEmpty else {
+            await MainActor.run {
+                statusMessage = "No text to convert to speech"
+                completion(nil)
+            }
+            return
+        }
         
-        // Get file extension based on selected format
-        let fileExtension = getFileExtension(for: selectedOutputFormat)
-        let filename = "ElevenLabs_TTS_\(timestamp).\(fileExtension)"
+        await MainActor.run {
+            isGenerating = true
+            statusMessage = "Generating speech..."
+        }
         
-        // Create temporary file URL
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        let voiceSettings = VoiceSettings(
+            stability: 0.5,
+            similarity_boost: 0.75,
+            style: 0.0,
+            use_speaker_boost: true
+        )
         
-        do {
-            try audioData.write(to: tempURL)
-            audioFileURL = tempURL
-            showingShareSheet = true
-            statusMessage = "Ready to share audio"
-        } catch {
-            statusMessage = "Failed to prepare audio: \(error.localizedDescription)"
+        let voices = await api.loadVoicesIfNeeded()
+        
+        // Use the selected voice ID if available, otherwise use the first voice
+        let targetVoiceId = selectedVoiceId.isEmpty ? voices.first?.voiceId : selectedVoiceId
+        let voice = voices.first { $0.voiceId == targetVoiceId }
+        
+        if let voice = voice {
+            if let audioData = await api.textToSpeech(
+                text: inputText,
+                voiceId: voice.voiceId ?? "",
+                voiceSettings: voiceSettings,
+                outputFormat: selectedOutputFormat
+            ) {
+                await MainActor.run {
+                    currentAudioData = audioData
+                    statusMessage = "Audio generated successfully"
+                    isGenerating = false
+                    completion(audioData)
+                }
+            } else {
+                await MainActor.run {
+                    statusMessage = api.errorMessage ?? "Failed to generate speech"
+                    isGenerating = false
+                    completion(nil)
+                }
+            }
+        } else {
+            await MainActor.run {
+                statusMessage = "No voices available or selected voice not found"
+                isGenerating = false
+                completion(nil)
+            }
         }
     }
     
@@ -251,6 +351,19 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
     
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+// SaveSheet wrapper for UIDocumentPickerViewController
+struct SaveSheet: UIViewControllerRepresentable {
+    let audioFileURL: URL
+    
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let controller = UIDocumentPickerViewController(forExporting: [audioFileURL])
+        controller.shouldShowFileExtensions = true
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
 }
 
 #Preview {
